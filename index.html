@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Monitoring Ability Free Practice (10 items)</title>
+  <title>Monitoring Ability Free Practice Test</title>
   <style>
     body {
       margin: 0;
@@ -13,14 +13,20 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
+      padding-top: 2rem;
       height: 100vh;
       text-align: center;
     }
     h1 {
-      margin-bottom: 1rem;
+      margin: 0;
+      font-size: 1.8rem;
       font-weight: 500;
-      font-size: 1.4rem;
+    }
+    h2 {
+      margin: 0.5rem 0 1.5rem;
+      font-size: 1.2rem;
+      color: #555;
     }
     #circle {
       position: relative;
@@ -29,7 +35,7 @@
       border-radius: 50%;
       background: #a8d5e2;
       overflow: hidden;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
     }
     .dot {
       position: absolute;
@@ -40,13 +46,13 @@
     }
     #choices {
       display: flex;
-      gap: .75rem;
       flex-wrap: wrap;
+      gap: 0.75rem;
       justify-content: center;
-      margin-bottom: 1.5rem;
+      margin-bottom: 2rem;
     }
     .choice {
-      padding: .5rem .9rem;
+      padding: 0.6rem 1.2rem;
       background: #4a90e2;
       border: none;
       border-radius: 6px;
@@ -54,16 +60,17 @@
       font-size: 1rem;
       cursor: pointer;
     }
-    .choice:hover { opacity: .85; }
+    .choice:hover { opacity: 0.85; }
     #result {
       display: none;
+      margin-top: 2rem;
     }
     #result p {
-      font-size: 1.2rem;
-      margin-bottom: 1rem;
+      font-size: 1.4rem;
+      margin-bottom: 1.5rem;
     }
     #retake {
-      padding: .6rem 1.2rem;
+      padding: 0.6rem 1.2rem;
       background: #4a90e2;
       color: #fff;
       border: none;
@@ -71,40 +78,49 @@
       font-size: 1rem;
       cursor: pointer;
     }
-    #retake:hover { opacity: .85; }
+    #retake:hover { opacity: 0.85; }
   </style>
 </head>
 <body>
 
-  <h1 id="title">Free Practice: How many objects did you see?</h1>
+  <h1>Monitoring Ability Free Practice Test</h1>
+  <h2 id="subtitle">Question 1 of 10</h2>
+
   <div id="circle"></div>
   <div id="choices"></div>
+
   <div id="result">
     <p id="scoreText"></p>
     <button id="retake">Retake Test</button>
   </div>
 
   <script>
+    // Your 10 questions
     const questions = [3,7,5,9,4,6,8,3,9,5];
-    let current = 0, score = 0, dots = [], startTime = null;
+    let current = 0, score = 0;
 
-    const title   = document.getElementById('title');
-    const circle  = document.getElementById('circle');
-    const choices = document.getElementById('choices');
-    const result  = document.getElementById('result');
-    const scoreText = document.getElementById('scoreText');
-    const retakeBtn = document.getElementById('retake');
+    // DOM elements
+    const subtitle = document.getElementById('subtitle');
+    const circle   = document.getElementById('circle');
+    const choices  = document.getElementById('choices');
+    const result   = document.getElementById('result');
+    const scoreText= document.getElementById('scoreText');
+    const retakeBtn= document.getElementById('retake');
 
     function loadQuestion() {
-      // reset UI
-      title.textContent = `Question ${current+1} of ${questions.length}`;
+      // Hide results, show quiz UI
+      result.style.display = 'none';
+      circle.style.display = 'block';
+      choices.style.display = 'flex';
+
+      // Update subtitle
+      subtitle.textContent = `Question ${current+1} of ${questions.length}`;
+
+      // Clear previous dots & buttons
       circle.innerHTML = '';
       choices.innerHTML = '';
-      result.style.display = 'none';
-      circle.style.display = '';
-      choices.style.display = '';
 
-      // create choice buttons
+      // Create answer buttons (3–9)
       for (let n = 3; n <= 9; n++) {
         const btn = document.createElement('button');
         btn.textContent = n;
@@ -121,45 +137,46 @@
         choices.appendChild(btn);
       }
 
-      // create moving dots
-      dots = [];
+      // Create moving dots
       const count = questions[current];
+      const dots = [];
       for (let i = 0; i < count; i++) {
         const d = document.createElement('div');
         d.className = 'dot';
-        // random start position
-        const ang = Math.random() * 2 * Math.PI;
-        const rad = Math.random() * (140 - 10);
-        d.x = 140 + rad * Math.cos(ang);
-        d.y = 140 + rad * Math.sin(ang);
+        // random position within circle
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = Math.random() * (140 - 10);
+        d.x = 140 + radius * Math.cos(angle);
+        d.y = 140 + radius * Math.sin(angle);
         // random velocity
-        const sp = 30 + Math.random() * 50;
-        const dir= Math.random() * 2 * Math.PI;
-        d.vx = Math.cos(dir) * sp;
-        d.vy = Math.sin(dir) * sp;
+        const speed = 30 + Math.random() * 50;
+        const dir   = Math.random() * 2 * Math.PI;
+        d.vx = Math.cos(dir) * speed;
+        d.vy = Math.sin(dir) * speed;
         circle.appendChild(d);
         dots.push(d);
       }
 
-      // animate (optional: they can answer anytime)
-      startTime = null;
+      // Animate for up to 4s (but user can click anytime)
+      let startTime = null;
       function animate(ts) {
         if (!startTime) startTime = ts;
         const elapsed = ts - startTime;
-        const dt = (Math.min(elapsed, 4000) - (animate.last || 0)) / 1000;
+        const delta   = Math.min(elapsed, 4000) - (animate.last || 0);
+        const dt      = delta / 1000;
         dots.forEach(d => {
           d.x += d.vx * dt;
           d.y += d.vy * dt;
           // bounce off edge
           const dx = d.x - 140, dy = d.y - 140;
-          if (Math.hypot(dx,dy) > 140) {
-            const norm = Math.hypot(dx,dy);
+          if (Math.hypot(dx, dy) > 140) {
+            const norm = Math.hypot(dx, dy);
             const nx = dx / norm, ny = dy / norm;
-            const proj = d.vx * nx + d.vy * ny;
-            d.vx -= 2 * proj * nx;
-            d.vy -= 2 * proj * ny;
-            d.x = 140 + nx * 140;
-            d.y = 140 + ny * 140;
+            const proj = d.vx*nx + d.vy*ny;
+            d.vx -= 2*proj*nx;
+            d.vy -= 2*proj*ny;
+            d.x = 140 + nx*140;
+            d.y = 140 + ny*140;
           }
           d.style.transform = `translate(${d.x-9}px,${d.y-9}px)`;
         });
@@ -170,30 +187,24 @@
     }
 
     function showResults() {
-      // hide test UI
+      // Hide quiz UI
       circle.style.display = 'none';
       choices.style.display = 'none';
-      // show results
+      // Show results
       scoreText.textContent = `Your score: ${score} / ${questions.length}`;
-      result.style.display = '';
-      title.textContent = 'Test Complete!';
+      result.style.display = 'block';
+      subtitle.textContent = 'Test Complete!';
     }
 
+    // Retake handler
     retakeBtn.onclick = () => {
       current = 0;
       score = 0;
       loadQuestion();
     };
 
-    // start
+    // Start the quiz
     loadQuestion();
   </script>
-
-</body>
-</html>
-
-
-  </script>
-
 </body>
 </html>
