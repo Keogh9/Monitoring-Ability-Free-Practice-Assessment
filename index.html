@@ -12,11 +12,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       height: 100vh;
+      text-align: center;
     }
     h1 {
-      margin: 1rem 0;
+      margin-bottom: 1rem;
       font-weight: 500;
       font-size: 1.4rem;
     }
@@ -27,6 +28,7 @@
       border-radius: 50%;
       background: #a8d5e2;
       overflow: hidden;
+      margin-bottom: 1rem;
     }
     .dot {
       position: absolute;
@@ -38,7 +40,9 @@
     #choices {
       display: flex;
       gap: .75rem;
-      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1.5rem;
     }
     .choice {
       padding: .5rem .9rem;
@@ -50,99 +54,102 @@
       cursor: pointer;
     }
     .choice:hover { opacity: .85; }
-    #nav {
-      margin-bottom: 1.2rem;
-      font-size: .9rem;
+    #result {
+      display: none;
     }
-    #nav button {
-      background: none;
+    #result p {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    #retake {
+      padding: .6rem 1.2rem;
+      background: #4a90e2;
+      color: #fff;
       border: none;
-      color: #333;
+      border-radius: 6px;
       font-size: 1rem;
       cursor: pointer;
-      padding: .5rem 1rem;
     }
-    #nav button:disabled { opacity: .4; cursor: default; }
+    #retake:hover { opacity: .85; }
   </style>
 </head>
 <body>
 
-  <h1>Free Practice: How many objects did you see?</h1>
+  <h1 id="title">Free Practice: How many objects did you see?</h1>
   <div id="circle"></div>
   <div id="choices"></div>
-  <div id="nav">
-    <button id="prevBtn" disabled>← Previous</button>
-    <span id="progress">1 / 10</span>
-    <button id="nextBtn" disabled>Next →</button>
+  <div id="result">
+    <p id="scoreText"></p>
+    <button id="retake">Retake Test</button>
   </div>
 
   <script>
-    // 10 questions with dot‐counts between 3 and 9
-    const questions = [3, 7, 5, 9, 4, 6, 8, 3, 9, 5];
+    const questions = [3,7,5,9,4,6,8,3,9,5];
+    let current = 0, score = 0, dots = [], startTime = null;
 
-    // DOM refs
-    const circle   = document.getElementById('circle');
-    const choices  = document.getElementById('choices');
-    const prevBtn  = document.getElementById('prevBtn');
-    const nextBtn  = document.getElementById('nextBtn');
-    const progress = document.getElementById('progress');
+    const title   = document.getElementById('title');
+    const circle  = document.getElementById('circle');
+    const choices = document.getElementById('choices');
+    const result  = document.getElementById('result');
+    const scoreText = document.getElementById('scoreText');
+    const retakeBtn = document.getElementById('retake');
 
-    let current = 0, dots = [], startTime = null;
-
-    function loadQuestion(idx) {
-      // Reset UI
+    function loadQuestion() {
+      // reset UI
+      title.textContent = `Question ${current+1} of ${questions.length}`;
       circle.innerHTML = '';
       choices.innerHTML = '';
-      prevBtn.disabled = idx === 0;
-      nextBtn.disabled = true;
-      progress.textContent = `${idx + 1} / ${questions.length}`;
+      result.style.display = 'none';
+      circle.style.display = '';
+      choices.style.display = '';
 
-      // Create choice buttons (3–9)
+      // create choice buttons
       for (let n = 3; n <= 9; n++) {
         const btn = document.createElement('button');
         btn.textContent = n;
         btn.className = 'choice';
         btn.onclick = () => {
-          if (n === questions[idx]) {
-            alert('✔️ Correct!');
+          if (n === questions[current]) score++;
+          current++;
+          if (current < questions.length) {
+            loadQuestion();
           } else {
-            alert(`❌ Nope. It was ${questions[idx]}.`);
+            showResults();
           }
-          nextBtn.disabled = false;
         };
         choices.appendChild(btn);
       }
 
-      // Create moving dots
+      // create moving dots
       dots = [];
-      const count = questions[idx];
+      const count = questions[current];
       for (let i = 0; i < count; i++) {
         const d = document.createElement('div');
         d.className = 'dot';
-        // Random start inside circle
-        const angle = Math.random() * 2 * Math.PI;
-        const radius = Math.random() * (140 - 10);
-        d.x = 140 + radius * Math.cos(angle);
-        d.y = 140 + radius * Math.sin(angle);
-        // Random velocity
-        const speed = 30 + Math.random() * 50;
-        const dir   = Math.random() * 2 * Math.PI;
-        d.vx = Math.cos(dir) * speed;
-        d.vy = Math.sin(dir) * speed;
+        // random start position
+        const ang = Math.random() * 2 * Math.PI;
+        const rad = Math.random() * (140 - 10);
+        d.x = 140 + rad * Math.cos(ang);
+        d.y = 140 + rad * Math.sin(ang);
+        // random velocity
+        const sp = 30 + Math.random() * 50;
+        const dir= Math.random() * 2 * Math.PI;
+        d.vx = Math.cos(dir) * sp;
+        d.vy = Math.sin(dir) * sp;
         circle.appendChild(d);
         dots.push(d);
       }
 
-      // Animate for 4s
+      // animate (optional: they can answer anytime)
       startTime = null;
       function animate(ts) {
         if (!startTime) startTime = ts;
         const elapsed = ts - startTime;
-        const dt = (Math.min(elapsed, 4000) - (animate.lastTime || 0)) / 1000;
+        const dt = (Math.min(elapsed, 4000) - (animate.last || 0)) / 1000;
         dots.forEach(d => {
           d.x += d.vx * dt;
           d.y += d.vy * dt;
-          // Bounce off edge
+          // bounce off edge
           const dx = d.x - 140, dy = d.y - 140;
           if (Math.hypot(dx,dy) > 140) {
             const norm = Math.hypot(dx,dy);
@@ -155,28 +162,35 @@
           }
           d.style.transform = `translate(${d.x-9}px,${d.y-9}px)`;
         });
-        animate.lastTime = Math.min(elapsed, 4000);
+        animate.last = Math.min(elapsed, 4000);
         if (elapsed < 4000) requestAnimationFrame(animate);
       }
       requestAnimationFrame(animate);
     }
 
-    // Navigation
-    prevBtn.onclick = () => {
-      if (current > 0) {
-        current--;
-        loadQuestion(current);
-      }
-    };
-    nextBtn.onclick = () => {
-      if (current < questions.length - 1) {
-        current++;
-        loadQuestion(current);
-      }
+    function showResults() {
+      // hide test UI
+      circle.style.display = 'none';
+      choices.style.display = 'none';
+      // show results
+      scoreText.textContent = `Your score: ${score} / ${questions.length}`;
+      result.style.display = '';
+      title.textContent = 'Test Complete!';
+    }
+
+    retakeBtn.onclick = () => {
+      current = 0;
+      score = 0;
+      loadQuestion();
     };
 
-    // Initial load
-    loadQuestion(0);
+    // start
+    loadQuestion();
+  </script>
+
+</body>
+</html>
+
   </script>
 
 </body>
