@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitoring Ability Free Practice (10 items)</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #f7fafb;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      height: 100vh;
+    }
+    h1 {
+      margin: 1rem 0;
+      font-weight: 500;
+      font-size: 1.4rem;
+    }
+    #circle {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: #a8d5e2;
+      overflow: hidden;
+    }
+    .dot {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    #choices {
+      display: flex;
+      gap: .75rem;
+      margin-bottom: 1rem;
+    }
+    .choice {
+      padding: .5rem .9rem;
+      background: #4a90e2;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .choice:hover { opacity: .85; }
+    #nav {
+      margin-bottom: 1.2rem;
+      font-size: .9rem;
+    }
+    #nav button {
+      background: none;
+      border: none;
+      color: #333;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: .5rem 1rem;
+    }
+    #nav button:disabled { opacity: .4; cursor: default; }
+  </style>
+</head>
+<body>
+
+  <h1>Free Practice: How many objects did you see?</h1>
+  <div id="circle"></div>
+  <div id="choices"></div>
+  <div id="nav">
+    <button id="prevBtn" disabled>← Previous</button>
+    <span id="progress">1 / 10</span>
+    <button id="nextBtn" disabled>Next →</button>
+  </div>
+
+  <script>
+    // 10 questions with dot‐counts between 3 and 9
+    const questions = [3, 7, 5, 9, 4, 6, 8, 3, 9, 5];
+
+    // DOM refs
+    const circle   = document.getElementById('circle');
+    const choices  = document.getElementById('choices');
+    const prevBtn  = document.getElementById('prevBtn');
+    const nextBtn  = document.getElementById('nextBtn');
+    const progress = document.getElementById('progress');
+
+    let current = 0, dots = [], startTime = null;
+
+    function loadQuestion(idx) {
+      // Reset UI
+      circle.innerHTML = '';
+      choices.innerHTML = '';
+      prevBtn.disabled = idx === 0;
+      nextBtn.disabled = true;
+      progress.textContent = `${idx + 1} / ${questions.length}`;
+
+      // Create choice buttons (3–9)
+      for (let n = 3; n <= 9; n++) {
+        const btn = document.createElement('button');
+        btn.textContent = n;
+        btn.className = 'choice';
+        btn.onclick = () => {
+          if (n === questions[idx]) {
+            alert('✔️ Correct!');
+          } else {
+            alert(`❌ Nope. It was ${questions[idx]}.`);
+          }
+          nextBtn.disabled = false;
+        };
+        choices.appendChild(btn);
+      }
+
+      // Create moving dots
+      dots = [];
+      const count = questions[idx];
+      for (let i = 0; i < count; i++) {
+        const d = document.createElement('div');
+        d.className = 'dot';
+        // Random start inside circle
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = Math.random() * (140 - 10);
+        d.x = 140 + radius * Math.cos(angle);
+        d.y = 140 + radius * Math.sin(angle);
+        // Random velocity
+        const speed = 30 + Math.random() * 50;
+        const dir   = Math.random() * 2 * Math.PI;
+        d.vx = Math.cos(dir) * speed;
+        d.vy = Math.sin(dir) * speed;
+        circle.appendChild(d);
+        dots.push(d);
+      }
+
+      // Animate for 4s
+      startTime = null;
+      function animate(ts) {
+        if (!startTime) startTime = ts;
+        const elapsed = ts - startTime;
+        const dt = (Math.min(elapsed, 4000) - (animate.lastTime || 0)) / 1000;
+        dots.forEach(d => {
+          d.x += d.vx * dt;
+          d.y += d.vy * dt;
+          // Bounce off edge
+          const dx = d.x - 140, dy = d.y - 140;
+          if (Math.hypot(dx,dy) > 140) {
+            const norm = Math.hypot(dx,dy);
+            const nx = dx / norm, ny = dy / norm;
+            const proj = d.vx * nx + d.vy * ny;
+            d.vx -= 2 * proj * nx;
+            d.vy -= 2 * proj * ny;
+            d.x = 140 + nx * 140;
+            d.y = 140 + ny * 140;
+          }
+          d.style.transform = `translate(${d.x-9}px,${d.y-9}px)`;
+        });
+        animate.lastTime = Math.min(elapsed, 4000);
+        if (elapsed < 4000) requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    }
+
+    // Navigation
+    prevBtn.onclick = () => {
+      if (current > 0) {
+        current--;
+        loadQuestion(current);
+      }
+    };
+    nextBtn.onclick = () => {
+      if (current < questions.length - 1) {
+        current++;
+        loadQuestion(current);
+      }
+    };
+
+    // Initial load
+    loadQuestion(0);
+  </script>
+
+</body>
+</html>
